@@ -3,5 +3,6 @@ export type User = {
   name: string;
   email: string;
   passwordHash: string;
+  provider: "local" | "google";
   createdAt: Date;
 };
