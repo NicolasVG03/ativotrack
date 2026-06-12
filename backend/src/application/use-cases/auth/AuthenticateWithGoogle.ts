@@ -3,14 +3,8 @@ import { OAuth2Client } from "google-auth-library";
 import { IUserRepository } from "../../../domain/repositories/IUserRepository";
 import { ITokenService } from "../../../domain/services/ITokenService";
 import { AppError } from "../../errors/AppError";
-
-interface Input {
-  idToken: string;
-}
-
-interface Output {
-  token: string;
-}
+import { AuthenticateWithGoogleInput } from "../../dtos/auth/AuthenticateWithGoogleInput";
+import { AuthOutput } from "../../dtos/auth/AuthOutput";
 
 export class AuthenticateWithGoogle {
   private readonly client: OAuth2Client;
@@ -23,7 +17,7 @@ export class AuthenticateWithGoogle {
     this.client = new OAuth2Client(googleClientId);
   }
 
-  async execute({ idToken }: Input): Promise<Output> {
+  async execute({ idToken }: AuthenticateWithGoogleInput): Promise<AuthOutput> {
     const ticket = await this.client.verifyIdToken({ idToken, audience: this.client._clientId });
     const payload = ticket.getPayload();
 
@@ -45,6 +39,6 @@ export class AuthenticateWithGoogle {
     }
 
     const token = this.tokenService.generate({ sub: user.id });
-    return { token };
+    return { token, user: { id: user.id, name: user.name, email: user.email } };
   }
 }
