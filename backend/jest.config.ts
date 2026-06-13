@@ -5,6 +5,7 @@ const config: Config = {
   testEnvironment: "node",
   rootDir: "src",
   testMatch: ["**/*.spec.ts", "**/*.test.ts"],
+  testPathIgnorePatterns: ['.integration.spec.ts'],
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/$1",
   },

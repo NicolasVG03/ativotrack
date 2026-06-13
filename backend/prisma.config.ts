@@ -1,7 +1,10 @@
 import { defineConfig } from "prisma/config";
 import { config } from "dotenv";
 
-config();
+config({
+  path: process.env.NODE_ENV === "test" ? ".env.test" : ".env",
+   override: true,
+});
 
 export default defineConfig({
   schema: "prisma/schema.prisma",

@@ -6,6 +6,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:integration": "jest --config src/tests/jest.integration.config.js",
+    "test:all": "npm run test && npm run test:integration",
     "dev": "tsx watch src/main/server.ts"
   },
   "keywords": [],
@@ -33,6 +35,7 @@
     "@types/pg": "^8.20.0",
     "@types/supertest": "^7.2.0",
     "dotenv": "^17.4.2",
+    "dotenv-cli": "^11.0.0",
     "jest": "^30.4.2",
     "prisma": "^7.8.0",
     "supertest": "^7.2.2",
