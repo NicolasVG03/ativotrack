@@ -8,7 +8,8 @@
     "test:coverage": "jest --coverage",
     "test:integration": "jest --config src/tests/jest.integration.config.js",
     "test:all": "npm run test && npm run test:integration",
-    "dev": "tsx watch src/main/server.ts"
+    "dev": "tsx watch src/main/server.ts",
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",

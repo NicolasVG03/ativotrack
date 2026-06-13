@@ -19,5 +19,15 @@ services:
     ports:
       - "5433:5432"
 
+  api:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - db
+    command: sh -c "npx prisma migrate deploy && node dist/main/server.js"
+
 volumes:
   postgres_data:

@@ -1,4 +1,4 @@
-import { Decimal } from "../../generated/prisma/internal/prismaNamespace";
+import { Prisma } from "../../generated/prisma";
 import { Expense } from "../../domain/entities/Expense";
 import { ExpenseFilters, ExpenseSummary, IExpenseRepository } from "../../domain/repositories/IExpenseRepository";
 import { prisma } from "../database/prisma/cliente";
@@ -6,7 +6,7 @@ import { prisma } from "../database/prisma/cliente";
 type PrismaExpense = {
   id: string;
   userId: string;
-  amount: Decimal;
+  amount: Prisma.Decimal;
   description: string;
   date: Date;
   category: string;
