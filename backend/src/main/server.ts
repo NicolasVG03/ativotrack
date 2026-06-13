@@ -1,6 +1,7 @@
 import express from "express";
-import { authController } from "./container";
+import { authController, authMiddleware, expenseController } from "./container";
 import { authRoutes } from "../presentation/http/routes/authRoutes";
+import { expenseRoutes } from "../presentation/http/routes/expenseRoutes";
 import { errorHandler } from "../presentation/http/middlewares/errorHandler";
 
 const app = express();
@@ -13,6 +14,7 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/auth", authRoutes(authController));
+app.use("/expenses", expenseRoutes(expenseController, authMiddleware));
 
 app.use(errorHandler);
 
