@@ -1,4 +1,4 @@
-import { Prisma } from "../../generated/prisma";
+import { Prisma } from "@prisma/client";
 import { Expense } from "../../domain/entities/Expense";
 import { ExpenseFilters, ExpenseSummary, IExpenseRepository } from "../../domain/repositories/IExpenseRepository";
 import { prisma } from "../database/prisma/cliente";
