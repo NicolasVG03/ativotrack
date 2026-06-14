@@ -7,10 +7,26 @@ import { errorHandler } from "../presentation/http/middlewares/errorHandler";
 
 export const app = express();
 
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'http://localhost:5173',
+].filter(Boolean) as string[];
+
 app.use(cors({
-  origin: process.env.CORS_ORIGIN ?? "http://localhost:5173",
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS bloqueado para origem: ${origin}`));
+    }
+  },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
+
 
 app.use(express.json());
 
