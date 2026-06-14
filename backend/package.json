@@ -3,13 +3,14 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "dev": "tsx watch src/main/server.ts",
+    "build": "tsc && tsc-alias",
+    "start": "node dist/main/server.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:integration": "jest --config src/tests/jest.integration.config.js",
-    "test:all": "npm run test && npm run test:integration",
-    "dev": "tsx watch src/main/server.ts",
-    "build": "tsc"
+    "test:all": "npm run test && npm run test:integration"
   },
   "keywords": [],
   "author": "",
@@ -43,6 +44,7 @@
     "prisma": "^7.8.0",
     "supertest": "^7.2.2",
     "ts-jest": "^29.4.11",
+    "tsc-alias": "^1.8.17",
     "tsx": "^4.22.4"
   }
 }
