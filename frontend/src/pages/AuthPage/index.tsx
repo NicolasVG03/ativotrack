@@ -1,8 +1,27 @@
-import { useState, type ChangeEvent, type FormEvent } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import type { AxiosError } from 'axios'
 import { Logo } from '../../components/ui/Logo'
 import { Icon } from '../../components/ui/Icon'
 import { FormInput, FormInputPassword } from '../../components/ui/FormInput'
+import { authApi } from '../../api/authApi'
+import { useAuth } from '../../context/AuthContext'
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (cfg: { client_id: string; callback: (r: { credential: string }) => void }) => void
+          renderButton: (el: HTMLElement, opts: object) => void
+        }
+      }
+    }
+  }
+}
 
 type Tab = 'login' | 'register'
 
@@ -23,38 +42,118 @@ const HEX_DECO = [
   { x: '85%', y: '70%', s: 68 },
 ]
 
+const loginSchema = z.object({
+  email:    z.string().email('E-mail inválido'),
+  password: z.string().min(6, 'Mínimo 6 caracteres'),
+})
+
+const registerSchema = z.object({
+  name:     z.string().min(2, 'Mínimo 2 caracteres'),
+  email:    z.string().email('E-mail inválido'),
+  password: z.string().min(6, 'Mínimo 6 caracteres'),
+  confirm:  z.string(),
+}).refine(d => d.password === d.confirm, {
+  message: 'Senhas não coincidem',
+  path: ['confirm'],
+})
+
+type LoginFields    = z.infer<typeof loginSchema>
+type RegisterFields = z.infer<typeof registerSchema>
+
+function FieldError({ msg }: { msg?: string }) {
+  if (!msg) return null
+  return <p style={{ fontSize: 12, color: 'var(--cng)', marginTop: -10, marginBottom: 12 }}>{msg}</p>
+}
+
 export default function AuthPage({ mode = 'login' }: AuthPageProps) {
-  const navigate = useNavigate()
+  const navigate    = useNavigate()
+  const { login }   = useAuth()
   const [tab, setTab] = useState<Tab>(mode)
-  const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' })
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [loading, setLoading] = useState(false)
+  const googleRef        = useRef<HTMLDivElement>(null)
+  const googleInitialized = useRef(false)
 
-  const set = (k: keyof typeof form) => (e: ChangeEvent<HTMLInputElement>) =>
-    setForm(f => ({ ...f, [k]: e.target.value }))
+  const loginForm = useForm<LoginFields>({ resolver: zodResolver(loginSchema) })
+  const registerForm = useForm<RegisterFields>({ resolver: zodResolver(registerSchema) })
 
-  const validate = () => {
-    const err: Record<string, string> = {}
-    if (tab === 'register' && !form.name.trim()) err.name = 'Nome obrigatório.'
-    if (!form.email.includes('@')) err.email = 'E-mail inválido.'
-    if (form.password.length < 6) err.password = 'Mínimo 6 caracteres.'
-    if (tab === 'register' && form.password !== form.confirm) err.confirm = 'Senhas não coincidem.'
-    return err
-  }
+  // Google Identity Services
+  useEffect(() => {
+    const initGoogle = () => {
+      if (!window.google || !googleRef.current || googleInitialized.current) return
+      googleInitialized.current = true
+      window.google.accounts.id.initialize({
+        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID as string,
+        callback: async ({ credential }) => {
+          try {
+            const data = await authApi.loginWithGoogle(credential)
+            login(data)
+            navigate('/dashboard')
+          } catch {
+            loginForm.setError('root', { message: 'Falha no login com Google' })
+          }
+        },
+      })
+      window.google.accounts.id.renderButton(googleRef.current, {
+        theme: 'filled_black',
+        size: 'large',
+        width: 368,
+        text: 'continue_with',
+        locale: 'pt-BR',
+      })
+    }
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const err = validate()
-    if (Object.keys(err).length) { setErrors(err); return }
-    setLoading(true)
-    setTimeout(() => { setLoading(false); navigate('/dashboard') }, 900)
-  }
+    if (window.google) {
+      initGoogle()
+    } else {
+      const script = document.querySelector('script[src*="accounts.google.com"]')
+      script?.addEventListener('load', initGoogle)
+      return () => script?.removeEventListener('load', initGoogle)
+    }
+  }, [])
+
+  const onLoginSubmit = loginForm.handleSubmit(async (data) => {
+    try {
+      const res = await authApi.login(data.email, data.password)
+      login(res)
+      navigate('/dashboard')
+    } catch (err) {
+      const msg = (err as AxiosError<{ message: string }>).response?.data?.message
+      loginForm.setError('root', { message: msg ?? 'Credenciais inválidas' })
+    }
+  })
+
+  const onRegisterSubmit = registerForm.handleSubmit(async (data) => {
+    try {
+      const res = await authApi.register(data.name, data.email, data.password)
+      login(res)
+      navigate('/dashboard')
+    } catch (err) {
+      const axiosErr = err as AxiosError<{ message: string }>
+      const status = axiosErr.response?.status
+      const msg = status === 409
+        ? 'Este e-mail já está cadastrado.'
+        : (axiosErr.response?.data?.message ?? 'Erro ao criar conta')
+      registerForm.setError('root', { message: msg })
+    }
+  })
 
   const switchTab = (t: Tab) => {
     setTab(t)
-    setErrors({})
-    setForm({ name: '', email: '', password: '', confirm: '' })
+    loginForm.reset()
+    registerForm.reset()
   }
+
+  const isSubmitting = tab === 'login'
+    ? loginForm.formState.isSubmitting
+    : registerForm.formState.isSubmitting
+
+  const rootError = tab === 'login'
+    ? loginForm.formState.errors.root?.message
+    : registerForm.formState.errors.root?.message
+
+  const lf = loginForm.register
+  const rf = registerForm.register
+  const le = loginForm.formState.errors
+  const re = registerForm.formState.errors
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--cdp)' }}>
@@ -100,11 +199,9 @@ export default function AuthPage({ mode = 'login' }: AuthPageProps) {
       {/* ── RIGHT PANEL ── */}
       <div style={{ flex: 1, background: 'var(--cmid)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 40, position: 'relative' }}>
 
-        {/* back arrow */}
         <button
-          className="back-btn"
           onClick={() => navigate('/')}
-          style={{ position: 'absolute', top: 24, left: 24, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontFamily: 'Inter,sans-serif' }}
+          style={{ position: 'absolute', top: 24, left: 24, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontFamily: 'Inter,sans-serif', color: 'var(--ctxt)' }}
         >
           <Icon name="chevronLeft" size={16} />
           Voltar
@@ -112,7 +209,6 @@ export default function AuthPage({ mode = 'login' }: AuthPageProps) {
 
         <div style={{ width: '100%', maxWidth: 400 }}>
 
-          {/* Logo mobile */}
           <div className="block lg:hidden" style={{ marginBottom: 32 }}>
             <Logo size="md" />
           </div>
@@ -135,7 +231,6 @@ export default function AuthPage({ mode = 'login' }: AuthPageProps) {
             ))}
           </div>
 
-          {/* Heading */}
           <h1 style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 26, fontWeight: 800, letterSpacing: '-0.02em', marginBottom: 6 }}>
             {tab === 'login' ? 'Bom te ver de volta.' : 'Vamos começar.'}
           </h1>
@@ -143,76 +238,82 @@ export default function AuthPage({ mode = 'login' }: AuthPageProps) {
             {tab === 'login' ? 'Entre na sua conta' : 'Crie sua conta gratuita'}
           </p>
 
-          {/* Google */}
-          <button
-            onClick={() => navigate('/dashboard')}
-            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '12px 20px', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 10, color: 'var(--ctxt)', fontSize: 14, fontWeight: 500, fontFamily: 'Inter,sans-serif', cursor: 'pointer', marginBottom: 20, transition: 'background .2s' }}
-            onMouseOver={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.11)')}
-            onMouseOut={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.07)')}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            Continuar com Google
-          </button>
+          {/* Google button rendered by GIS */}
+          <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+            <div ref={googleRef} />
+          </div>
 
           {/* Divider */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
             <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.1)' }} />
-            <span style={{ fontSize: 12, color: 'var(--ctxt3)' }}>ou</span>
+            <span style={{ fontSize: 12, color: 'rgba(247,248,250,0.35)' }}>ou</span>
             <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.1)' }} />
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit}>
-            {tab === 'register' && (
-              <div>
-                <FormInput label="Nome completo" placeholder="Seu nome" value={form.name} onChange={set('name')} autoFocus />
-                {errors.name && <p style={{ fontSize: 12, color: 'var(--cng)', marginTop: -10, marginBottom: 12 }}>{errors.name}</p>}
-              </div>
-            )}
-            <div>
-              <FormInput label="E-mail" type="email" placeholder="seu@email.com" value={form.email} onChange={set('email')} />
-              {errors.email && <p style={{ fontSize: 12, color: 'var(--cng)', marginTop: -10, marginBottom: 12 }}>{errors.email}</p>}
-            </div>
-            <div>
-              <FormInputPassword label="Senha" placeholder="••••••••" value={form.password} onChange={set('password')} />
-              {errors.password && <p style={{ fontSize: 12, color: 'var(--cng)', marginTop: -10, marginBottom: 12 }}>{errors.password}</p>}
-            </div>
-            {tab === 'register' && (
-              <div>
-                <FormInputPassword label="Confirmar senha" placeholder="••••••••" value={form.confirm} onChange={set('confirm')} />
-                {errors.confirm && <p style={{ fontSize: 12, color: 'var(--cng)', marginTop: -10, marginBottom: 12 }}>{errors.confirm}</p>}
-              </div>
-            )}
+          {/* Login form */}
+          {tab === 'login' && (
+            <form onSubmit={onLoginSubmit}>
+              <FormInput label="E-mail" type="email" placeholder="seu@email.com" {...lf('email')} />
+              <FieldError msg={le.email?.message} />
+              <FormInputPassword label="Senha" placeholder="••••••••" {...lf('password')} />
+              <FieldError msg={le.password?.message} />
 
-            {tab === 'login' && (
               <div style={{ textAlign: 'right', marginTop: -8, marginBottom: 16 }}>
                 <a href="#" style={{ fontSize: 13, color: 'var(--cgold)', textDecoration: 'none' }}>Esqueci a senha</a>
               </div>
-            )}
 
-            <button
-              type="submit"
-              className="btn btn-primary btn-full"
-              style={{ marginTop: 4, fontSize: 15, padding: '13px', borderRadius: 10 }}
-              disabled={loading}
-            >
-              {loading ? 'Aguarde...' : (tab === 'login' ? 'Entrar' : 'Criar conta grátis')}
-            </button>
-          </form>
+              {rootError && (
+                <p style={{ fontSize: 13, color: 'var(--cng)', textAlign: 'center', marginBottom: 12 }}>{rootError}</p>
+              )}
 
+              <button
+                type="submit"
+                className="btn btn-primary btn-full"
+                style={{ marginTop: 4, fontSize: 15, padding: '13px', borderRadius: 10 }}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Entrando...' : 'Entrar'}
+              </button>
+            </form>
+          )}
+
+          {/* Register form */}
           {tab === 'register' && (
-            <p style={{ fontSize: 12, color: 'var(--ctxt3)', textAlign: 'center', marginTop: 16, lineHeight: 1.6 }}>
-              Ao criar sua conta, você concorda com os{' '}
-              <a href="#" style={{ color: 'rgba(201,168,76,0.6)', textDecoration: 'none' }}>Termos de Uso</a>{' '}
-              e a{' '}
-              <a href="#" style={{ color: 'rgba(201,168,76,0.6)', textDecoration: 'none' }}>Política de Privacidade</a>{' '}
-              do AtivoTrack.
-            </p>
+            <form onSubmit={onRegisterSubmit}>
+              <FormInput label="Nome completo" placeholder="Seu nome" autoFocus {...rf('name')} />
+              <FieldError msg={re.name?.message} />
+              <FormInput label="E-mail" type="email" placeholder="seu@email.com" {...rf('email')} />
+              <FieldError msg={re.email?.message} />
+              <FormInputPassword label="Senha" placeholder="••••••••" {...rf('password')} />
+              <FieldError msg={re.password?.message} />
+              <FormInputPassword label="Confirmar senha" placeholder="••••••••" {...rf('confirm')} />
+              <FieldError msg={re.confirm?.message} />
+
+              {rootError && (
+                <p style={{ fontSize: 13, color: 'var(--cng)', textAlign: 'center', marginBottom: 12 }}>
+                  {rootError}
+                  {rootError === 'Este e-mail já está cadastrado.' && (
+                    <>{' '}<button type="button" onClick={() => switchTab('login')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--cgold)', fontSize: 13, padding: 0, fontFamily: 'inherit' }}>Fazer login</button></>
+                  )}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                className="btn btn-primary btn-full"
+                style={{ marginTop: 4, fontSize: 15, padding: '13px', borderRadius: 10 }}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Criando conta...' : 'Criar conta grátis'}
+              </button>
+
+              <p style={{ fontSize: 12, color: 'rgba(247,248,250,0.3)', textAlign: 'center', marginTop: 16, lineHeight: 1.6 }}>
+                Ao criar sua conta, você concorda com os{' '}
+                <a href="#" style={{ color: 'rgba(201,168,76,0.6)', textDecoration: 'none' }}>Termos de Uso</a>{' '}
+                e a{' '}
+                <a href="#" style={{ color: 'rgba(201,168,76,0.6)', textDecoration: 'none' }}>Política de Privacidade</a>.
+              </p>
+            </form>
           )}
         </div>
       </div>

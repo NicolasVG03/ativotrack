@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Logo } from '../../components/ui/Logo'
+import { useAuth } from '../../context/AuthContext'
 import { Icon } from '../../components/ui/Icon'
 import { DashboardHome } from './DashboardHome'
 import { ExpensesPage } from './ExpensesPage'
@@ -28,7 +28,7 @@ export default function DashboardPage() {
   const [view,     setView]     = useState<DashView>('home')
   const [expenses, setExpenses] = useState<Expense[]>(MOCK_EXPENSES)
   const [toast,    setToast]    = useState<string | null>(null)
-  const navigate = useNavigate()
+  const { user, logout } = useAuth()
 
   const showToast = (msg: string) => {
     setToast(msg)
@@ -88,7 +88,7 @@ export default function DashboardPage() {
         </nav>
 
         <button
-          onClick={() => navigate('/')}
+          onClick={logout}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -130,14 +130,14 @@ export default function DashboardPage() {
             {NAV_ITEMS.find(n => n.id === view)?.label ?? 'Dashboard'}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(247,248,250,0.6)' }}>Nicolas</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(247,248,250,0.6)' }}>{user?.name ?? ''}</span>
             <div style={{
               width: 32, height: 32, borderRadius: '50%',
               background: 'linear-gradient(135deg, #C9A84C, #e0c987)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 13, fontWeight: 700, color: 'var(--cdp)', flexShrink: 0,
             }}>
-              N
+              {(user?.name?.[0] ?? '').toUpperCase()}
             </div>
           </div>
         </header>
@@ -175,19 +175,6 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
-    </div>
-  )
-}
-
-function PlaceholderView({ label, icon, desc }: { label: string; icon: string; desc: string }) {
-  return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      height: '100%', gap: 16, padding: 40, textAlign: 'center',
-    }}>
-      <span style={{ fontSize: 52 }}>{icon}</span>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: 'rgba(247,248,250,0.5)' }}>{label}</h2>
-      <p style={{ fontSize: 14, color: 'rgba(247,248,250,0.3)', maxWidth: 300 }}>{desc}</p>
     </div>
   )
 }
