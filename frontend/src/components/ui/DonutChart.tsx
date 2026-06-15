@@ -15,14 +15,17 @@ export function DonutChart({ data, size = 180, centerLabel, centerSub }: DonutCh
   const circ = 2 * Math.PI * r
   const total = data.reduce((s, d) => s + d.value, 0)
 
-  let cumulativeDeg = -90
-  const slices = data.map(d => {
-    const pct = total > 0 ? d.value / total : 0
-    const arcLen = pct * circ
-    const startAngle = cumulativeDeg
-    cumulativeDeg += pct * 360
-    return { ...d, arcLen, startAngle }
-  })
+  type Slice = CategoryTotal & { arcLen: number; startAngle: number }
+  const { slices } = data.reduce<{ slices: Slice[]; cumDeg: number }>(
+    ({ slices, cumDeg }, d) => {
+      const pct = total > 0 ? d.value / total : 0
+      return {
+        slices: [...slices, { ...d, arcLen: pct * circ, startAngle: cumDeg }],
+        cumDeg: cumDeg + pct * 360,
+      }
+    },
+    { slices: [], cumDeg: -90 },
+  )
 
   const innerR = r - strokeWidth / 2 - size * 0.015
 
