@@ -23,6 +23,8 @@ declare global {
   }
 }
 
+let gsiInitialized = false
+
 type Tab = 'login' | 'register'
 
 interface AuthPageProps {
@@ -70,8 +72,7 @@ export default function AuthPage({ mode = 'login' }: AuthPageProps) {
   const { login }   = useAuth()
   const [tab, setTab] = useState<Tab>(mode)
   const [googleLoading, setGoogleLoading] = useState(false)
-  const googleRef        = useRef<HTMLDivElement>(null)
-  const googleInitialized = useRef(false)
+  const googleRef = useRef<HTMLDivElement>(null)
 
   const loginForm = useForm<LoginFields>({ resolver: zodResolver(loginSchema) })
   const registerForm = useForm<RegisterFields>({ resolver: zodResolver(registerSchema) })
@@ -79,8 +80,8 @@ export default function AuthPage({ mode = 'login' }: AuthPageProps) {
   // Google Identity Services
   useEffect(() => {
     const initGoogle = () => {
-      if (!window.google || !googleRef.current || googleInitialized.current) return
-      googleInitialized.current = true
+      if (!window.google || !googleRef.current || gsiInitialized) return
+      gsiInitialized = true
       window.google.accounts.id.initialize({
         client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID as string,
         callback: async ({ credential }) => {
