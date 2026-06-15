@@ -79,23 +79,27 @@ export default function AuthPage({ mode = 'login' }: AuthPageProps) {
 
   // Google Identity Services
   useEffect(() => {
-    const initGoogle = () => {
-      if (!window.google || !googleRef.current || gsiInitialized) return
-      gsiInitialized = true
-      window.google.accounts.id.initialize({
-        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID as string,
-        callback: async ({ credential }) => {
-          setGoogleLoading(true)
-          try {
-            const data = await authApi.loginWithGoogle(credential)
-            login(data)
-            navigate('/dashboard')
-          } catch {
-            setGoogleLoading(false)
-            loginForm.setError('root', { message: 'Falha no login com Google' })
-          }
-        },
-      })
+    let cancelled = false
+
+    const doRender = () => {
+      if (cancelled || !window.google || !googleRef.current) return
+      if (!gsiInitialized) {
+        gsiInitialized = true
+        window.google.accounts.id.initialize({
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID as string,
+          callback: async ({ credential }) => {
+            setGoogleLoading(true)
+            try {
+              const data = await authApi.loginWithGoogle(credential)
+              login(data)
+              navigate('/dashboard')
+            } catch {
+              setGoogleLoading(false)
+              loginForm.setError('root', { message: 'Falha no login com Google' })
+            }
+          },
+        })
+      }
       window.google.accounts.id.renderButton(googleRef.current, {
         theme: 'filled_black',
         size: 'large',
@@ -106,12 +110,17 @@ export default function AuthPage({ mode = 'login' }: AuthPageProps) {
     }
 
     if (window.google) {
-      initGoogle()
+      doRender()
     } else {
       const script = document.querySelector('script[src*="accounts.google.com"]')
-      script?.addEventListener('load', initGoogle)
-      return () => script?.removeEventListener('load', initGoogle)
+      script?.addEventListener('load', doRender)
+      return () => {
+        cancelled = true
+        script?.removeEventListener('load', doRender)
+      }
     }
+
+    return () => { cancelled = true }
   }, [])
 
   const onLoginSubmit = loginForm.handleSubmit(async (data) => {

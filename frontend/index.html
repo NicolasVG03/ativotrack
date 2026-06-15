@@ -9,6 +9,19 @@
     rel="stylesheet" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AtivoTrack</title>
+  <style>
+    /* Critical responsive CSS - prevents FOUC while Tailwind v4 CSS loads */
+    .hidden { display: none !important; }
+    @media (min-width: 768px) {
+      .md\:flex        { display: flex         !important; }
+      .md\:inline-flex { display: inline-flex  !important; }
+      .md\:hidden      { display: none         !important; }
+    }
+    @media (min-width: 1024px) {
+      .lg\:flex        { display: flex         !important; }
+      .lg\:hidden      { display: none         !important; }
+    }
+  </style>
   <script src="https://accounts.google.com/gsi/client" async></script>
 </head>
 

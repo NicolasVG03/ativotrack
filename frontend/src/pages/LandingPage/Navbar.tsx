@@ -52,9 +52,9 @@ export function Navbar() {
             Começar grátis
           </Button>
           <button
-            className="md:hidden"
+            className="md:hidden flex"
             onClick={() => setMobileOpen(v => !v)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ctxt)', padding: 4, display: 'flex' }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ctxt)', padding: 4 }}
             aria-label="Menu"
           >
             <Icon name={mobileOpen ? 'x' : 'menu'} size={22} />

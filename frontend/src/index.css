@@ -338,12 +338,20 @@
   .landing-trust-grid      { display: grid; grid-template-columns: repeat(3,1fr); gap: 24px; }
   .landing-pricing-grid    { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
   .landing-preview-grid    { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+  .landing-stats-grid      { display: grid; grid-template-columns: repeat(3,1fr); }
 
   @media (max-width: 767px) {
     .landing-features-grid  { grid-template-columns: 1fr; }
     .landing-trust-grid     { grid-template-columns: 1fr; gap: 16px; }
     .landing-pricing-grid   { grid-template-columns: 1fr; }
     .landing-preview-grid   { grid-template-columns: 1fr; gap: 32px; }
+    .landing-stats-grid     { grid-template-columns: 1fr; }
+    .landing-stats-grid > * > div {
+      border-right: none !important;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: 0 0 28px !important;
+    }
+    .landing-stats-grid > *:last-child > div { border-bottom: none; padding-bottom: 0 !important; }
   }
 
   @media (min-width: 768px) and (max-width: 1023px) {

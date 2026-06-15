@@ -14,7 +14,7 @@ export function SocialProof() {
       borderTop: '1px solid rgba(255,255,255,0.06)',
       borderBottom: '1px solid rgba(255,255,255,0.06)',
     }}>
-      <div style={{ maxWidth: 960, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(3,1fr)' }}>
+      <div className="landing-stats-grid" style={{ maxWidth: 960, margin: '0 auto' }}>
         {STATS.map(({ value, label }, i) => (
           <motion.div key={i} {...fadeUpView(i * 0.08)}>
             <div style={{
