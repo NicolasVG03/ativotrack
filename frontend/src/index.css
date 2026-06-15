@@ -1,9 +1,4 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 @layer base {
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -150,5 +145,47 @@
     color: var(--ctxt2);
     overflow: hidden;
     transition: max-height .35s ease, padding .35s ease;
+  }
+
+  /* ── fade-in-up animation */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0);    }
+  }
+  .fade-in-up {
+    animation: fadeInUp .45s ease both;
+  }
+
+  /* ── dashboard content area */
+  .page-content {
+    padding: 32px 28px 100px;
+    min-height: 100%;
+  }
+
+  /* ── floating action button */
+  .fab {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--cgold);
+    color: var(--cdp);
+    border: none;
+    border-radius: 9999px;
+    padding: 14px 24px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    box-shadow: 0 8px 32px rgba(201,168,76,.4), 0 0 0 1px rgba(201,168,76,.2);
+    transition: all .2s ease;
+    z-index: 50;
+  }
+  .fab:hover {
+    background: var(--cgoldl);
+    transform: scale(1.04);
+    box-shadow: 0 12px 40px rgba(201,168,76,.55);
   }
 }
