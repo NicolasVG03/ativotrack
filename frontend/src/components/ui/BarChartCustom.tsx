@@ -36,8 +36,6 @@ export function BarChartCustom({ data, height = 220 }: BarChartCustomProps) {
   const barGap    = 4
   const groupPad  = (groupW - barW * 2 - barGap) / 2
 
-  const toY = (v: number) => paddingTop + innerH - (v / maxVal) * innerH
-
   return (
     <svg
       viewBox={`0 0 ${chartW} ${chartH}`}
