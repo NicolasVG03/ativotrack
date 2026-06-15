@@ -69,6 +69,7 @@ export default function AuthPage({ mode = 'login' }: AuthPageProps) {
   const navigate    = useNavigate()
   const { login }   = useAuth()
   const [tab, setTab] = useState<Tab>(mode)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const googleRef        = useRef<HTMLDivElement>(null)
   const googleInitialized = useRef(false)
 
@@ -83,11 +84,13 @@ export default function AuthPage({ mode = 'login' }: AuthPageProps) {
       window.google.accounts.id.initialize({
         client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID as string,
         callback: async ({ credential }) => {
+          setGoogleLoading(true)
           try {
             const data = await authApi.loginWithGoogle(credential)
             login(data)
             navigate('/dashboard')
           } catch {
+            setGoogleLoading(false)
             loginForm.setError('root', { message: 'Falha no login com Google' })
           }
         },
@@ -239,8 +242,25 @@ export default function AuthPage({ mode = 'login' }: AuthPageProps) {
           </p>
 
           {/* Google button rendered by GIS */}
-          <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
-            <div ref={googleRef} />
+          <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginBottom: 20, minHeight: 40 }}>
+            {googleLoading ? (
+              <div style={{
+                width: 368, maxWidth: '100%', height: 40, borderRadius: 4,
+                background: '#131314', border: '1px solid rgba(255,255,255,0.12)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(247,248,250,0.6)" strokeWidth="2.5" strokeLinecap="round" style={{ animation: 'spin 0.8s linear infinite', flexShrink: 0 }}>
+                  <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
+                  <path d="M12 2a10 10 0 0 1 10 10" />
+                </svg>
+                <span style={{ fontSize: 14, fontFamily: 'Inter,sans-serif', color: 'rgba(247,248,250,0.6)' }}>
+                  Entrando com Google...
+                </span>
+                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+              </div>
+            ) : (
+              <div ref={googleRef} />
+            )}
           </div>
 
           {/* Divider */}
@@ -253,9 +273,9 @@ export default function AuthPage({ mode = 'login' }: AuthPageProps) {
           {/* Login form */}
           {tab === 'login' && (
             <form onSubmit={onLoginSubmit}>
-              <FormInput label="E-mail" type="email" placeholder="seu@email.com" {...lf('email')} />
+              <FormInput label="E-mail" type="email" placeholder="seu@email.com" disabled={googleLoading} {...lf('email')} />
               <FieldError msg={le.email?.message} />
-              <FormInputPassword label="Senha" placeholder="••••••••" {...lf('password')} />
+              <FormInputPassword label="Senha" placeholder="••••••••" disabled={googleLoading} {...lf('password')} />
               <FieldError msg={le.password?.message} />
 
               <div style={{ textAlign: 'right', marginTop: -8, marginBottom: 16 }}>
@@ -270,7 +290,7 @@ export default function AuthPage({ mode = 'login' }: AuthPageProps) {
                 type="submit"
                 className="btn btn-primary btn-full"
                 style={{ marginTop: 4, fontSize: 15, padding: '13px', borderRadius: 10 }}
-                disabled={isSubmitting}
+                disabled={isSubmitting || googleLoading}
               >
                 {isSubmitting ? 'Entrando...' : 'Entrar'}
               </button>
@@ -280,13 +300,13 @@ export default function AuthPage({ mode = 'login' }: AuthPageProps) {
           {/* Register form */}
           {tab === 'register' && (
             <form onSubmit={onRegisterSubmit}>
-              <FormInput label="Nome completo" placeholder="Seu nome" autoFocus {...rf('name')} />
+              <FormInput label="Nome completo" placeholder="Seu nome" autoFocus disabled={googleLoading} {...rf('name')} />
               <FieldError msg={re.name?.message} />
-              <FormInput label="E-mail" type="email" placeholder="seu@email.com" {...rf('email')} />
+              <FormInput label="E-mail" type="email" placeholder="seu@email.com" disabled={googleLoading} {...rf('email')} />
               <FieldError msg={re.email?.message} />
-              <FormInputPassword label="Senha" placeholder="••••••••" {...rf('password')} />
+              <FormInputPassword label="Senha" placeholder="••••••••" disabled={googleLoading} {...rf('password')} />
               <FieldError msg={re.password?.message} />
-              <FormInputPassword label="Confirmar senha" placeholder="••••••••" {...rf('confirm')} />
+              <FormInputPassword label="Confirmar senha" placeholder="••••••••" disabled={googleLoading} {...rf('confirm')} />
               <FieldError msg={re.confirm?.message} />
 
               {rootError && (
@@ -302,7 +322,7 @@ export default function AuthPage({ mode = 'login' }: AuthPageProps) {
                 type="submit"
                 className="btn btn-primary btn-full"
                 style={{ marginTop: 4, fontSize: 15, padding: '13px', borderRadius: 10 }}
-                disabled={isSubmitting}
+                disabled={isSubmitting || googleLoading}
               >
                 {isSubmitting ? 'Criando conta...' : 'Criar conta grátis'}
               </button>
