@@ -4,6 +4,7 @@ import { Logo } from '../../components/ui/Logo'
 import { Icon } from '../../components/ui/Icon'
 import { DashboardHome } from './DashboardHome'
 import { ExpensesPage } from './ExpensesPage'
+import { ReportsPage } from './ReportsPage'
 import { MOCK_EXPENSES, type Expense } from '../../utils/expenses'
 import type { IconName } from '../../types'
 
@@ -156,7 +157,7 @@ export default function DashboardPage() {
               showToast={showToast}
             />
           )}
-          {view === 'reports' && <PlaceholderView label="Relatórios" icon="📊" desc="Visualize relatórios detalhados dos seus gastos." />}
+          {view === 'reports' && <ReportsPage expenses={expenses} />}
         </main>
 
         {/* Toast */}
