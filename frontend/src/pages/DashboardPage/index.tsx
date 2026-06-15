@@ -6,6 +6,7 @@ import { DashboardHome } from './DashboardHome'
 import { ExpensesPage } from './ExpensesPage'
 import { ReportsPage } from './ReportsPage'
 import type { IconName } from '../../types'
+import { useInactivityTimeout } from '../../hooks/useInactivityTimeout'
 
 type DashView = 'home' | 'expenses' | 'reports'
 
@@ -32,6 +33,8 @@ export default function DashboardPage() {
   const [drawerOpen,  setDrawerOpen]  = useState(false)
   const [isMobile,    setIsMobile]    = useState(() => window.innerWidth < 768)
   const { user, logout } = useAuth()
+
+  useInactivityTimeout(30 * 60 * 1000, logout)
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 767px)')

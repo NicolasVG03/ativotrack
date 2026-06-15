@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './routes/ProtectedRoute'
+import PublicRoute from './routes/PublicRoute'
 import LandingPage from './pages/LandingPage'
 import AuthPage from './pages/AuthPage'
 import DashboardPage from './pages/DashboardPage'
@@ -15,8 +16,10 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<AuthPage mode="login" />} />
-          <Route path="/register" element={<AuthPage mode="register" />} />
+          <Route element={<PublicRoute />}>
+            <Route path="/login" element={<AuthPage mode="login" />} />
+            <Route path="/register" element={<AuthPage mode="register" />} />
+          </Route>
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardPage />} />
           </Route>
