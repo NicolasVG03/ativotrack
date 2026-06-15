@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from 'react'
+import { createContext, useContext, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { AuthUser } from '../api/authApi'
 
