@@ -1,5 +1,53 @@
 @import "tailwindcss";
 
+@theme {
+  /* Colors */
+  --color-ativo-deep:    #0a0e1a;
+  --color-ativo-mid:     #13182b;
+  --color-ativo-surface: #1a2540;
+  --color-gold:          #C9A84C;
+  --color-gold-light:    #e0c987;
+  --color-ativo-success: #4ade80;
+  --color-ativo-danger:  #f87171;
+  --color-chart-1:       #C9A84C;
+  --color-chart-2:       #60a5fa;
+  --color-chart-3:       #a78bfa;
+  --color-chart-4:       #34d399;
+  --color-chart-5:       #fb923c;
+
+  /* Fonts */
+  --font-display: "Plus Jakarta Sans", sans-serif;
+  --font-body:    Inter, sans-serif;
+
+  /* Border radius */
+  --radius-pill: 9999px;
+
+  /* Shadows */
+  --shadow-gold:    0 0 24px rgba(201,168,76,0.3), 0 4px 16px rgba(201,168,76,0.15);
+  --shadow-gold-lg: 0 0 36px rgba(201,168,76,0.5), 0 4px 24px rgba(201,168,76,0.25);
+  --shadow-gold-xl: 0 0 48px rgba(201,168,76,0.08);
+
+  /* Animations */
+  --animate-float:      floatY 6s ease-in-out infinite;
+  --animate-float-sm:   floatYSm 3s ease-in-out infinite;
+  --animate-pulse-gold: pulseGold 2s ease-in-out infinite;
+}
+
+@keyframes floatY {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-12px); }
+}
+
+@keyframes floatYSm {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-5px); }
+}
+
+@keyframes pulseGold {
+  0%, 100% { box-shadow: 0 0 24px rgba(201,168,76,.3), 0 4px 16px rgba(201,168,76,.15); }
+  50%       { box-shadow: 0 0 40px rgba(201,168,76,.5), 0 4px 24px rgba(201,168,76,.3); }
+}
+
 @layer base {
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
