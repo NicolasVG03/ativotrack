@@ -52,7 +52,7 @@ export function Features() {
           </div>
         </motion.div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
+        <div className="landing-features-grid">
           {FEATURES.map((feat, i) => (
             <Card key={i} {...feat} delay={i * 0.05 + 0.05} />
           ))}

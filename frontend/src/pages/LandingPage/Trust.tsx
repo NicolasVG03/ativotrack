@@ -23,7 +23,7 @@ export function Trust() {
               <span className="text-gold">Seguro para ficar.</span>
             </h2>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 24, marginBottom: 36 }}>
+            <div className="landing-trust-grid" style={{ marginBottom: 36 }}>
               {TRUST_ITEMS.map(({ icon, title, body }, i) => (
                 <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
                   <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(201,168,76,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

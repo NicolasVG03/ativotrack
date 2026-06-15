@@ -27,7 +27,7 @@ interface ExpenseFormData {
 }
 
 interface ExpensesPageProps {
-  showToast: (msg: string) => void
+  showToast: (msg: string, type?: 'success' | 'error') => void
 }
 
 // ── EXPENSE FORM MODAL ────────────────────────────────────────────────────
@@ -460,24 +460,32 @@ export function ExpensesPage({ showToast }: ExpensesPageProps) {
   const clearFilters = () => { setSearch(''); setCategory(''); setDateFrom(''); setDateTo(''); setPage(1) }
 
   const handleSave = async (data: CreateExpenseInput) => {
-    if (editTarget) {
-      await updateMutation.mutateAsync({ id: editTarget.id, data })
-      showToast('✅ Despesa atualizada!')
-    } else {
-      await createMutation.mutateAsync(data)
-      showToast('💸 Despesa salva!')
+    try {
+      if (editTarget) {
+        await updateMutation.mutateAsync({ id: editTarget.id, data })
+        showToast('✅ Despesa atualizada!')
+      } else {
+        await createMutation.mutateAsync(data)
+        showToast('💸 Despesa salva!')
+      }
+      setShowForm(false)
+      setEditTarget(null)
+    } catch {
+      showToast('❌ Erro ao salvar. Tente novamente.', 'error')
     }
-    setShowForm(false)
-    setEditTarget(null)
   }
 
   const handleEdit = (exp: Expense) => { setEditTarget(exp); setShowForm(true) }
 
   const handleDelete = async () => {
     if (!delTarget) return
-    await deleteMutation.mutateAsync(delTarget.id)
-    showToast('🗑 Despesa removida.')
-    setDelTarget(null)
+    try {
+      await deleteMutation.mutateAsync(delTarget.id)
+      showToast('🗑 Despesa removida.')
+      setDelTarget(null)
+    } catch {
+      showToast('❌ Erro ao excluir. Tente novamente.', 'error')
+    }
   }
 
   const openNew = () => { setEditTarget(null); setShowForm(true) }
@@ -511,8 +519,10 @@ export function ExpensesPage({ showToast }: ExpensesPageProps) {
 
       {/* List */}
       {isLoading ? (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: 'rgba(247,248,250,0.4)', fontSize: 14 }}>
-          Carregando…
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="skeleton-row" style={{ animationDelay: `${i * 0.08}s` }} />
+          ))}
         </div>
       ) : (
         <div className="fade-in-up" style={{ animationDelay: '.1s' }}>

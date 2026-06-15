@@ -33,7 +33,7 @@ export function Pricing() {
           </div>
         </motion.div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+        <div className="landing-pricing-grid">
           {PLANS.map((plan, i) => (
             <motion.div key={i} {...fadeUpView(i * 0.1)}>
               <div style={{

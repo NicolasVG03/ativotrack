@@ -162,6 +162,22 @@
     min-height: 100%;
   }
 
+  @media (max-width: 767px) {
+    .page-content { padding: 20px 16px 100px; }
+  }
+
+  /* ── skeleton pulse */
+  @keyframes skeletonPulse {
+    0%, 100% { opacity: 0.4; }
+    50%       { opacity: 0.15; }
+  }
+  .skeleton-row {
+    height: 56px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.06);
+    animation: skeletonPulse 1.4s ease-in-out infinite;
+  }
+
   /* ── form inputs (dashboard) */
   .input {
     width: 100%;
@@ -262,6 +278,36 @@
   @media (max-width: 640px) {
     .expense-table-desktop { display: none !important; }
     .expense-cards-mobile  { display: flex; }
+  }
+
+  /* ── landing page responsive section padding */
+  @media (max-width: 767px) {
+    section { padding-left: 20px !important; padding-right: 20px !important; }
+  }
+
+  /* ── landing page responsive grids */
+  .landing-features-grid   { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+  .landing-trust-grid      { display: grid; grid-template-columns: repeat(3,1fr); gap: 24px; }
+  .landing-pricing-grid    { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .landing-preview-grid    { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+
+  @media (max-width: 767px) {
+    .landing-features-grid  { grid-template-columns: 1fr; }
+    .landing-trust-grid     { grid-template-columns: 1fr; gap: 16px; }
+    .landing-pricing-grid   { grid-template-columns: 1fr; }
+    .landing-preview-grid   { grid-template-columns: 1fr; gap: 32px; }
+  }
+
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .landing-features-grid  { grid-template-columns: repeat(2,1fr); }
+    .landing-trust-grid     { grid-template-columns: repeat(3,1fr); }
+  }
+
+  /* ── dashboard chart grid */
+  .dash-chart-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; }
+
+  @media (max-width: 767px) {
+    .dash-chart-grid { grid-template-columns: 1fr; }
   }
 
   /* ── period pill (reports page) */

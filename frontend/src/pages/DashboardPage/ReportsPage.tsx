@@ -48,17 +48,17 @@ function MiniKPI({ label, value, trend, trendColor, trendIcon, sub, delay = 0 }:
   return (
     <div
       className="glass fade-in-up"
-      style={{ animationDelay: delay + 's', borderRadius: 14, padding: '18px 20px', flex: 1, minWidth: 0 }}
+      style={{ animationDelay: delay + 's', borderRadius: 14, padding: '18px 20px', flex: 1, minWidth: 140, overflow: 'hidden' }}
     >
-      <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(247,248,250,0.4)', marginBottom: 10 }}>
+      <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(247,248,250,0.4)', marginBottom: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {label}
       </div>
-      <div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 22, fontWeight: 800, color: '#f7f8fa', marginBottom: 6 }}>
+      <div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 'clamp(17px,2.2vw,22px)', fontWeight: 800, color: '#f7f8fa', marginBottom: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {value}
       </div>
-      <div style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 4, color: trendColor ?? 'rgba(247,248,250,0.4)' }}>
+      <div style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 4, color: trendColor ?? 'rgba(247,248,250,0.4)', overflow: 'hidden' }}>
         {trendIcon && <Icon name={trendIcon} size={13} color={trendColor} />}
-        <span>{trend ?? sub}</span>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{trend ?? sub}</span>
       </div>
     </div>
   )
@@ -71,8 +71,8 @@ export function ReportsPage() {
 
   const { from, to, prevFrom, prevTo, label, prevLabel } = getDateRange(period)
 
-  const { data: expenses     = [] } = useExpenses({ from, to })
-  const { data: prevExpenses = [] } = useExpenses({ from: prevFrom, to: prevTo })
+  const { data: expenses     = [], isLoading } = useExpenses({ from, to })
+  const { data: prevExpenses = []            } = useExpenses({ from: prevFrom, to: prevTo })
 
   const total     = expenses.reduce((s, e) => s + e.amount, 0)
   const prevTotal = prevExpenses.reduce((s, e) => s + e.amount, 0)
@@ -97,6 +97,14 @@ export function ReportsPage() {
     current:  cat.value,
     previous: prevCatMap[cat.name] ?? 0,
   }))
+
+  if (isLoading) {
+    return (
+      <div className="page-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
+        <span style={{ color: 'rgba(247,248,250,0.4)', fontSize: 14 }}>Carregando…</span>
+      </div>
+    )
+  }
 
   return (
     <div className="page-content">

@@ -5,7 +5,15 @@ import { CategoryBadge } from '../../components/ui/CategoryBadge'
 import { formatCurrency, formatDate, computeCategoryTotals, type Expense } from '../../utils/expenses'
 import { getDateRange } from '../../utils/dateRange'
 import { useExpenses } from '../../hooks/useExpenses'
+import { useAuth } from '../../context/AuthContext'
 import type { IconName } from '../../types'
+
+function getGreeting() {
+  const h = new Date().getHours()
+  if (h < 12) return 'Bom dia'
+  if (h < 18) return 'Boa tarde'
+  return 'Boa noite'
+}
 
 interface KPICardProps {
   icon: IconName
@@ -20,7 +28,7 @@ function KPICard({ icon, label, value, sub, subColor, delay = 0 }: KPICardProps)
   return (
     <div
       className="glass fade-in-up"
-      style={{ animationDelay: `${delay}s`, borderRadius: 14, padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 12, flex: 1, minWidth: 0 }}
+      style={{ animationDelay: `${delay}s`, borderRadius: 14, padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 12, flex: 1, minWidth: 140, overflow: 'hidden' }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'rgba(201,168,76,0.12)', border: '1px solid rgba(201,168,76,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -28,12 +36,12 @@ function KPICard({ icon, label, value, sub, subColor, delay = 0 }: KPICardProps)
         </div>
         <span className="eyebrow" style={{ fontSize: 10 }}>{label}</span>
       </div>
-      <div>
-        <div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 'clamp(20px,2.5vw,28px)', fontWeight: 800, color: '#f7f8fa', lineHeight: 1.1 }}>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 'clamp(17px,2.5vw,28px)', fontWeight: 800, color: '#f7f8fa', lineHeight: 1.1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {value}
         </div>
         {sub && (
-          <div style={{ fontSize: 12, color: subColor ?? 'rgba(247,248,250,0.45)', marginTop: 4 }}>
+          <div style={{ fontSize: 12, color: subColor ?? 'rgba(247,248,250,0.45)', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {sub}
           </div>
         )}
@@ -67,8 +75,10 @@ interface DashboardHomeProps {
 }
 
 export function DashboardHome({ onNavigate }: DashboardHomeProps) {
+  const { user } = useAuth()
   const { from, to, label } = getDateRange('month')
   const { data: expenses = [], isLoading } = useExpenses({ from, to })
+  const firstName = user?.name?.split(' ')[0] ?? ''
 
   const total = expenses.reduce((s, e) => s + e.amount, 0)
   const catTotals = computeCategoryTotals(expenses)
@@ -77,8 +87,20 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
 
   if (isLoading) {
     return (
-      <div className="page-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
-        <span style={{ color: 'rgba(247,248,250,0.4)', fontSize: 14 }}>Carregando…</span>
+      <div className="page-content">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div className="skeleton-row" style={{ height: 32, width: 200, marginBottom: 4 }} />
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="skeleton-row" style={{ flex: 1, minWidth: 160, height: 88, animationDelay: `${i * 0.1}s` }} />
+            ))}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="skeleton-row" style={{ animationDelay: `${i * 0.08}s` }} />
+            ))}
+          </div>
+        </div>
       </div>
     )
   }
@@ -89,7 +111,7 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
       {/* Greeting */}
       <div className="fade-in-up" style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 4 }}>
-          Bom dia, Nicolas. 👋
+          {getGreeting()}{firstName ? `, ${firstName}.` : '.'} 👋
         </h1>
         <p style={{ fontSize: 14, color: 'rgba(247,248,250,0.45)' }}>
           Aqui está seu resumo financeiro de {label.toLowerCase()}.
@@ -104,7 +126,7 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
       </div>
 
       {/* Chart + Recent */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 20 }}>
+      <div className="dash-chart-grid">
 
         {/* Donut chart */}
         <div className="glass fade-in-up" style={{ animationDelay: '.2s', borderRadius: 16, padding: 24 }}>

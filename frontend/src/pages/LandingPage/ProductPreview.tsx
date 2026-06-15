@@ -18,7 +18,7 @@ export function ProductPreview() {
 
   return (
     <section id="produto" style={{ background: '#13182b', padding: '96px 40px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-      <div style={{ maxWidth: 1080, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
+      <div style={{ maxWidth: 1080, margin: '0 auto' }} className="landing-preview-grid">
 
         <motion.div {...fadeUpView(0)}>
           <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, overflow: 'hidden', aspectRatio: '4/3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
