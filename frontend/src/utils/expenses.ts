@@ -16,6 +16,20 @@ export const CATEGORY_EMOJI: Record<string, string> = {
   Outros:      '📦',
 }
 
+export interface Category {
+  name: string
+  emoji: string
+}
+
+export const CATEGORIES: Category[] = [
+  { name: 'Alimentação', emoji: '🍔' },
+  { name: 'Moradia',     emoji: '🏠' },
+  { name: 'Saúde',       emoji: '❤️'  },
+  { name: 'Transporte',  emoji: '🚗' },
+  { name: 'Lazer',       emoji: '🎮' },
+  { name: 'Outros',      emoji: '📦' },
+]
+
 export interface Expense {
   id: number
   desc: string

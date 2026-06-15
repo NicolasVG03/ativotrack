@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { Logo } from '../../components/ui/Logo'
 import { Icon } from '../../components/ui/Icon'
 import { DashboardHome } from './DashboardHome'
-import { MOCK_EXPENSES } from '../../utils/expenses'
+import { ExpensesPage } from './ExpensesPage'
+import { MOCK_EXPENSES, type Expense } from '../../utils/expenses'
 import type { IconName } from '../../types'
 
 type DashView = 'home' | 'expenses' | 'reports'
@@ -20,9 +21,18 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'reports',  icon: 'reports',   label: 'Relatórios' },
 ]
 
+const TOAST_DURATION = 2800
+
 export default function DashboardPage() {
-  const [view, setView] = useState<DashView>('home')
+  const [view,     setView]     = useState<DashView>('home')
+  const [expenses, setExpenses] = useState<Expense[]>(MOCK_EXPENSES)
+  const [toast,    setToast]    = useState<string | null>(null)
   const navigate = useNavigate()
+
+  const showToast = (msg: string) => {
+    setToast(msg)
+    setTimeout(() => setToast(null), TOAST_DURATION)
+  }
 
   return (
     <div style={{ display: 'flex', height: '100vh', background: 'var(--cdp)', overflow: 'hidden' }}>
@@ -135,13 +145,34 @@ export default function DashboardPage() {
         <main style={{ flex: 1, overflowY: 'auto' }}>
           {view === 'home' && (
             <DashboardHome
-              expenses={MOCK_EXPENSES}
+              expenses={expenses}
               onNavigate={v => setView(v as DashView)}
             />
           )}
-          {view === 'expenses' && <PlaceholderView label="Despesas"   icon="💸" desc="Gerencie suas despesas aqui." />}
-          {view === 'reports'  && <PlaceholderView label="Relatórios" icon="📊" desc="Visualize relatórios detalhados dos seus gastos." />}
+          {view === 'expenses' && (
+            <ExpensesPage
+              expenses={expenses}
+              setExpenses={setExpenses}
+              showToast={showToast}
+            />
+          )}
+          {view === 'reports' && <PlaceholderView label="Relatórios" icon="📊" desc="Visualize relatórios detalhados dos seus gastos." />}
         </main>
+
+        {/* Toast */}
+        {toast && (
+          <div style={{
+            position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)',
+            background: '#13182b', border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: 12, padding: '12px 20px',
+            fontSize: 14, fontWeight: 600, color: '#f7f8fa',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+            zIndex: 300, whiteSpace: 'nowrap',
+            animation: 'fadeInUp .2s ease both',
+          }}>
+            {toast}
+          </div>
+        )}
       </div>
     </div>
   )

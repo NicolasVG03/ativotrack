@@ -162,6 +162,108 @@
     min-height: 100%;
   }
 
+  /* ── form inputs (dashboard) */
+  .input {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    padding: 11px 14px;
+    font-size: 14px;
+    color: #f7f8fa;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    transition: border-color .15s;
+    display: block;
+  }
+  .input:focus { border-color: rgba(201,168,76,0.5); }
+  .input::placeholder { color: rgba(247,248,250,0.25); }
+  .input option { background: #13182b; color: #f7f8fa; }
+
+  .input-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(247,248,250,0.6);
+    margin-bottom: 6px;
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* ── modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10,14,26,0.75);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 200;
+    animation: fadeInUp .2s ease both;
+  }
+  .modal-box {
+    background: #13182b;
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 20px;
+    padding: 28px;
+    width: 100%;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+  }
+
+  /* ── data table */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Inter', sans-serif;
+  }
+  .data-table thead tr {
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+  .data-table th {
+    padding: 12px 16px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(247,248,250,0.35);
+    text-align: left;
+  }
+  .data-table td {
+    padding: 13px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    vertical-align: middle;
+  }
+  .data-table tbody tr:last-child td { border-bottom: none; }
+  .data-table tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+  /* ── row action buttons */
+  .row-actions { display: flex; gap: 2px; }
+
+  /* ── cancel / danger buttons */
+  .btn-cancel {
+    background: rgba(255,255,255,0.06);
+    color: rgba(247,248,250,0.7);
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+  .btn-cancel:hover { background: rgba(255,255,255,0.1); }
+
+  .btn-danger {
+    background: rgba(248,113,113,0.12);
+    color: #f87171;
+    border: 1px solid rgba(248,113,113,0.3);
+  }
+  .btn-danger:hover { background: rgba(248,113,113,0.22); }
+
+  /* ── responsive: table vs cards */
+  .expense-cards-mobile { display: none; }
+
+  @media (max-width: 640px) {
+    .expense-table-desktop { display: none !important; }
+    .expense-cards-mobile  { display: flex; }
+  }
+
   /* ── floating action button */
   .fab {
     position: fixed;
