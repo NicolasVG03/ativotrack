@@ -31,8 +31,8 @@ export const CATEGORIES: Category[] = [
 ]
 
 export interface Expense {
-  id: number
-  desc: string
+  id: string
+  description: string
   category: string
   amount: number
   date: string
@@ -49,7 +49,7 @@ export function formatCurrency(value: number): string {
 }
 
 export function formatDate(iso: string): string {
-  const [y, m, d] = iso.split('-')
+  const [y, m, d] = iso.slice(0, 10).split('-')
   return `${d}/${m}/${y}`
 }
 
@@ -64,14 +64,14 @@ export function computeCategoryTotals(expenses: Expense[]): CategoryTotal[] {
 }
 
 export const MOCK_EXPENSES: Expense[] = [
-  { id: 1,  desc: 'Aluguel',            category: 'Moradia',     amount: 1000,  date: '2026-06-01' },
-  { id: 2,  desc: 'Supermercado',        category: 'Alimentação', amount: 312,   date: '2026-06-03' },
-  { id: 3,  desc: 'Manutenção do carro', category: 'Transporte',  amount: 280,   date: '2026-06-05' },
-  { id: 4,  desc: 'Dentista',            category: 'Saúde',       amount: 180,   date: '2026-06-07' },
-  { id: 5,  desc: 'Academia',            category: 'Saúde',       amount: 120,   date: '2026-06-10' },
-  { id: 6,  desc: 'Restaurante',         category: 'Alimentação', amount: 89,    date: '2026-06-11' },
-  { id: 7,  desc: 'Uber',               category: 'Transporte',  amount: 45,    date: '2026-06-12' },
-  { id: 8,  desc: 'Netflix',             category: 'Lazer',       amount: 39.90, date: '2026-06-12' },
-  { id: 9,  desc: 'Padaria',             category: 'Alimentação', amount: 32,    date: '2026-06-13' },
-  { id: 10, desc: 'Farmácia',            category: 'Saúde',       amount: 67,    date: '2026-06-13' },
+  { id: '1',  description: 'Aluguel',            category: 'Moradia',     amount: 1000,  date: '2026-06-01' },
+  { id: '2',  description: 'Supermercado',        category: 'Alimentação', amount: 312,   date: '2026-06-03' },
+  { id: '3',  description: 'Manutenção do carro', category: 'Transporte',  amount: 280,   date: '2026-06-05' },
+  { id: '4',  description: 'Dentista',            category: 'Saúde',       amount: 180,   date: '2026-06-07' },
+  { id: '5',  description: 'Academia',            category: 'Saúde',       amount: 120,   date: '2026-06-10' },
+  { id: '6',  description: 'Restaurante',         category: 'Alimentação', amount: 89,    date: '2026-06-11' },
+  { id: '7',  description: 'Uber',                category: 'Transporte',  amount: 45,    date: '2026-06-12' },
+  { id: '8',  description: 'Netflix',             category: 'Lazer',       amount: 39.90, date: '2026-06-12' },
+  { id: '9',  description: 'Padaria',             category: 'Alimentação', amount: 32,    date: '2026-06-13' },
+  { id: '10', description: 'Farmácia',            category: 'Saúde',       amount: 67,    date: '2026-06-13' },
 ]

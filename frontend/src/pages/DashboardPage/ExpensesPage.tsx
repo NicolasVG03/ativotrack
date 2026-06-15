@@ -9,19 +9,24 @@ import {
   CATEGORIES,
   type Expense,
 } from '../../utils/expenses'
+import {
+  useExpenses,
+  useCreateExpense,
+  useUpdateExpense,
+  useDeleteExpense,
+} from '../../hooks/useExpenses'
+import type { CreateExpenseInput, ListExpensesParams } from '../../api/expensesApi'
 
 // ── types ─────────────────────────────────────────────────────────────────
 
 interface ExpenseFormData {
-  desc: string
+  description: string
   amount: string
   date: string
   category: string
 }
 
 interface ExpensesPageProps {
-  expenses: Expense[]
-  setExpenses: React.Dispatch<React.SetStateAction<Expense[]>>
   showToast: (msg: string) => void
 }
 
@@ -29,17 +34,18 @@ interface ExpensesPageProps {
 
 interface ExpenseFormModalProps {
   expense: Expense | null
-  onSave: (data: Omit<Expense, 'id'>) => void
+  onSave: (data: CreateExpenseInput) => Promise<void>
   onClose: () => void
+  isPending: boolean
 }
 
-function ExpenseFormModal({ expense, onSave, onClose }: ExpenseFormModalProps) {
+function ExpenseFormModal({ expense, onSave, onClose, isPending }: ExpenseFormModalProps) {
   const editing = !!expense
   const [form, setForm] = useState<ExpenseFormData>({
-    desc:     expense?.desc     ?? '',
-    amount:   expense?.amount   != null ? String(expense.amount) : '',
-    date:     expense?.date     ?? new Date().toISOString().slice(0, 10),
-    category: expense?.category ?? '',
+    description: expense?.description ?? '',
+    amount:      expense?.amount != null ? String(expense.amount) : '',
+    date:        expense?.date ?? new Date().toISOString().slice(0, 10),
+    category:    expense?.category ?? '',
   })
   const [errors, setErrors] = useState<Partial<Record<keyof ExpenseFormData, string>>>({})
 
@@ -48,17 +54,22 @@ function ExpenseFormModal({ expense, onSave, onClose }: ExpenseFormModalProps) {
 
   const validate = (): typeof errors => {
     const err: typeof errors = {}
-    if (!form.desc.trim())                          err.desc     = 'Descrição obrigatória.'
-    if (!form.amount || parseFloat(form.amount) <= 0) err.amount = 'O valor precisa ser maior que R$ 0,01.'
-    if (!form.category)                             err.category = 'Selecione uma categoria.'
+    if (!form.description.trim())                    err.description = 'Descrição obrigatória.'
+    if (!form.amount || parseFloat(form.amount) <= 0) err.amount     = 'O valor precisa ser maior que R$ 0,01.'
+    if (!form.category)                              err.category    = 'Selecione uma categoria.'
     return err
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const err = validate()
     if (Object.keys(err).length) { setErrors(err); return }
-    onSave({ desc: form.desc, amount: parseFloat(form.amount), date: form.date, category: form.category })
+    await onSave({
+      description: form.description,
+      amount: parseFloat(form.amount),
+      date: form.date,
+      category: form.category,
+    })
   }
 
   return (
@@ -83,8 +94,8 @@ function ExpenseFormModal({ expense, onSave, onClose }: ExpenseFormModalProps) {
 
         <form onSubmit={handleSubmit}>
           <FormInput label="Descrição" placeholder="Ex: Mercado, Aluguel, Uber…"
-            value={form.desc} onChange={set('desc')} autoFocus />
-          {errors.desc && <p style={{ fontSize: 12, color: '#f87171', marginTop: -10, marginBottom: 12 }}>{errors.desc}</p>}
+            value={form.description} onChange={set('description')} autoFocus />
+          {errors.description && <p style={{ fontSize: 12, color: '#f87171', marginTop: -10, marginBottom: 12 }}>{errors.description}</p>}
 
           <div style={{ marginBottom: 16 }}>
             <label className="input-label">Valor (R$)</label>
@@ -115,9 +126,9 @@ function ExpenseFormModal({ expense, onSave, onClose }: ExpenseFormModalProps) {
           </div>
 
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
-            <button type="button" className="btn btn-cancel" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn btn-primary" style={{ borderRadius: 9999 }}>
-              {editing ? 'Salvar alterações' : 'Salvar despesa'} 💸
+            <button type="button" className="btn btn-cancel" onClick={onClose} disabled={isPending}>Cancelar</button>
+            <button type="submit" className="btn btn-primary" style={{ borderRadius: 9999 }} disabled={isPending}>
+              {isPending ? 'Salvando…' : editing ? 'Salvar alterações' : 'Salvar despesa 💸'}
             </button>
           </div>
         </form>
@@ -132,9 +143,10 @@ interface ConfirmDeleteProps {
   expense: Expense
   onConfirm: () => void
   onClose: () => void
+  isPending: boolean
 }
 
-function ConfirmDelete({ expense, onConfirm, onClose }: ConfirmDeleteProps) {
+function ConfirmDelete({ expense, onConfirm, onClose, isPending }: ConfirmDeleteProps) {
   return (
     <div
       className="modal-overlay"
@@ -152,12 +164,14 @@ function ConfirmDelete({ expense, onConfirm, onClose }: ConfirmDeleteProps) {
         <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 12 }}>Excluir despesa?</h2>
         <p style={{ fontSize: 14, color: 'rgba(247,248,250,0.55)', lineHeight: 1.65, marginBottom: 28 }}>
           Esta ação não pode ser desfeita. A despesa{' '}
-          <strong style={{ color: '#f7f8fa' }}>"{expense.desc} — {formatCurrency(expense.amount)}"</strong>{' '}
+          <strong style={{ color: '#f7f8fa' }}>"{expense.description} — {formatCurrency(expense.amount)}"</strong>{' '}
           será removida permanentemente.
         </p>
         <div style={{ display: 'flex', gap: 10 }}>
-          <button className="btn btn-cancel btn-full" onClick={onClose}>Cancelar</button>
-          <button className="btn btn-danger btn-full" onClick={onConfirm}>Excluir</button>
+          <button className="btn btn-cancel btn-full" onClick={onClose} disabled={isPending}>Cancelar</button>
+          <button className="btn btn-danger btn-full" onClick={onConfirm} disabled={isPending}>
+            {isPending ? 'Excluindo…' : 'Excluir'}
+          </button>
         </div>
       </div>
     </div>
@@ -262,7 +276,7 @@ function ExpenseTable({ expenses, onEdit, onDelete }: ListProps) {
               <td>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <CategoryIcon name={exp.category} size={32} />
-                  <span style={{ fontSize: 14, fontWeight: 600, color: '#f7f8fa' }}>{exp.desc}</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: '#f7f8fa' }}>{exp.description}</span>
                 </div>
               </td>
               <td><CategoryBadge name={exp.category} /></td>
@@ -298,7 +312,7 @@ function ExpenseCardsMobile({ expenses, onEdit, onDelete }: ListProps) {
         <div key={exp.id} className="glass" style={{ borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
           <CategoryIcon name={exp.category} size={40} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: '#f7f8fa', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{exp.desc}</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#f7f8fa', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{exp.description}</div>
             <div style={{ fontSize: 12, color: 'rgba(247,248,250,0.45)', marginTop: 3, display: 'flex', alignItems: 'center', gap: 6 }}>
               <CategoryBadge name={exp.category} />
               <span>· {formatDate(exp.date)}</span>
@@ -414,7 +428,7 @@ function Pagination({ page, total, onChange }: PaginationProps) {
 
 // ── EXPENSES PAGE ─────────────────────────────────────────────────────────
 
-export function ExpensesPage({ expenses, setExpenses, showToast }: ExpensesPageProps) {
+export function ExpensesPage({ showToast }: ExpensesPageProps) {
   const [showForm,   setShowForm]   = useState(false)
   const [editTarget, setEditTarget] = useState<Expense | null>(null)
   const [delTarget,  setDelTarget]  = useState<Expense | null>(null)
@@ -424,28 +438,33 @@ export function ExpensesPage({ expenses, setExpenses, showToast }: ExpensesPageP
   const [dateTo,     setDateTo]     = useState('')
   const [page,       setPage]       = useState(1)
 
+  const apiParams: ListExpensesParams = {
+    ...(category ? { category } : {}),
+    ...(dateFrom ? { from: dateFrom } : {}),
+    ...(dateTo   ? { to: dateTo }     : {}),
+  }
+
+  const { data: allExpenses = [], isLoading } = useExpenses(apiParams)
+  const createMutation = useCreateExpense()
+  const updateMutation = useUpdateExpense()
+  const deleteMutation = useDeleteExpense()
+
   const hasFilter = !!(search || category || dateFrom || dateTo)
 
-  const filtered = expenses
-    .filter(e => {
-      if (search   && !e.desc.toLowerCase().includes(search.toLowerCase()) && !e.category.toLowerCase().includes(search.toLowerCase())) return false
-      if (category && e.category !== category) return false
-      if (dateFrom && e.date < dateFrom) return false
-      if (dateTo   && e.date > dateTo)   return false
-      return true
-    })
+  const filtered = allExpenses
+    .filter(e => !search || e.description.toLowerCase().includes(search.toLowerCase()) || e.category.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => b.date.localeCompare(a.date))
 
   const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE)
 
   const clearFilters = () => { setSearch(''); setCategory(''); setDateFrom(''); setDateTo(''); setPage(1) }
 
-  const handleSave = (data: Omit<Expense, 'id'>) => {
+  const handleSave = async (data: CreateExpenseInput) => {
     if (editTarget) {
-      setExpenses(prev => prev.map(e => e.id === editTarget.id ? { ...e, ...data } : e))
+      await updateMutation.mutateAsync({ id: editTarget.id, data })
       showToast('✅ Despesa atualizada!')
     } else {
-      setExpenses(prev => [{ ...data, id: Date.now() }, ...prev])
+      await createMutation.mutateAsync(data)
       showToast('💸 Despesa salva!')
     }
     setShowForm(false)
@@ -454,14 +473,17 @@ export function ExpensesPage({ expenses, setExpenses, showToast }: ExpensesPageP
 
   const handleEdit = (exp: Expense) => { setEditTarget(exp); setShowForm(true) }
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!delTarget) return
-    setExpenses(prev => prev.filter(e => e.id !== delTarget.id))
+    await deleteMutation.mutateAsync(delTarget.id)
     showToast('🗑 Despesa removida.')
     setDelTarget(null)
   }
 
   const openNew = () => { setEditTarget(null); setShowForm(true) }
+
+  const isSavePending   = createMutation.isPending || updateMutation.isPending
+  const isDeletePending = deleteMutation.isPending
 
   return (
     <div className="page-content">
@@ -480,7 +502,7 @@ export function ExpensesPage({ expenses, setExpenses, showToast }: ExpensesPageP
       {/* Filters */}
       <FilterBar
         search={search}     setSearch={setSearch}
-        category={category} setCategory={setCategory}
+        category={category} setCategory={v => { setCategory(v); setPage(1) }}
         dateFrom={dateFrom} setDateFrom={v => { setDateFrom(v); setPage(1) }}
         dateTo={dateTo}     setDateTo={v => { setDateTo(v); setPage(1) }}
         onClear={clearFilters}
@@ -488,11 +510,17 @@ export function ExpensesPage({ expenses, setExpenses, showToast }: ExpensesPageP
       />
 
       {/* List */}
-      <div className="fade-in-up" style={{ animationDelay: '.1s' }}>
-        <ExpenseTable     expenses={paginated} onEdit={handleEdit} onDelete={setDelTarget} />
-        <ExpenseCardsMobile expenses={paginated} onEdit={handleEdit} onDelete={setDelTarget} />
-        <Pagination page={page} total={filtered.length} onChange={p => { setPage(p); window.scrollTo(0, 0) }} />
-      </div>
+      {isLoading ? (
+        <div style={{ textAlign: 'center', padding: '60px 0', color: 'rgba(247,248,250,0.4)', fontSize: 14 }}>
+          Carregando…
+        </div>
+      ) : (
+        <div className="fade-in-up" style={{ animationDelay: '.1s' }}>
+          <ExpenseTable       expenses={paginated} onEdit={handleEdit} onDelete={setDelTarget} />
+          <ExpenseCardsMobile expenses={paginated} onEdit={handleEdit} onDelete={setDelTarget} />
+          <Pagination page={page} total={filtered.length} onChange={p => { setPage(p); window.scrollTo(0, 0) }} />
+        </div>
+      )}
 
       {/* FAB */}
       <button className="fab" onClick={openNew}>
@@ -506,6 +534,7 @@ export function ExpensesPage({ expenses, setExpenses, showToast }: ExpensesPageP
           expense={editTarget}
           onSave={handleSave}
           onClose={() => { setShowForm(false); setEditTarget(null) }}
+          isPending={isSavePending}
         />
       )}
       {delTarget && (
@@ -513,6 +542,7 @@ export function ExpensesPage({ expenses, setExpenses, showToast }: ExpensesPageP
           expense={delTarget}
           onConfirm={handleDelete}
           onClose={() => setDelTarget(null)}
+          isPending={isDeletePending}
         />
       )}
     </div>

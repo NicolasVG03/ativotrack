@@ -4,33 +4,16 @@ import { DonutChart } from '../../components/ui/DonutChart'
 import { CategoryIcon } from '../../components/ui/CategoryIcon'
 import { CategoryBadge } from '../../components/ui/CategoryBadge'
 import { BarChartCustom } from '../../components/ui/BarChartCustom'
-import {
-  formatCurrency,
-  formatDate,
-  computeCategoryTotals,
-  type Expense,
-} from '../../utils/expenses'
-
-// ── Mock data for comparison (May 2026) ──────────────────────────────────────
-
-const MAY_EXPENSES: Array<{ category: string; amount: number }> = [
-  { category: 'Alimentação', amount: 820.30 },
-  { category: 'Moradia',     amount: 950.00 },
-  { category: 'Transporte',  amount: 460.00 },
-  { category: 'Saúde',       amount: 720.50 },
-  { category: 'Lazer',       amount: 258.00 },
-  { category: 'Outros',      amount: 141.00 },
-]
-
-type Period = 'month' | 'quarter' | 'year' | 'custom'
+import { formatCurrency, formatDate, computeCategoryTotals } from '../../utils/expenses'
+import { getDateRange, daysInRange, type Period } from '../../utils/dateRange'
+import { useExpenses } from '../../hooks/useExpenses'
 
 // ── PERIOD SELECTOR ──────────────────────────────────────────────────────────
 
 const PERIOD_OPTS: Array<{ id: Period; label: string }> = [
-  { id: 'month',   label: 'Mês atual'         },
-  { id: 'quarter', label: 'Último trimestre'  },
-  { id: 'year',    label: 'Este ano'          },
-  { id: 'custom',  label: '🗓 Personalizado'  },
+  { id: 'month',   label: 'Mês atual'        },
+  { id: 'quarter', label: 'Último trimestre' },
+  { id: 'year',    label: 'Este ano'         },
 ]
 
 function PeriodSelector({ period, setPeriod }: { period: Period; setPeriod: (p: Period) => void }) {
@@ -83,27 +66,37 @@ function MiniKPI({ label, value, trend, trendColor, trendIcon, sub, delay = 0 }:
 
 // ── REPORTS PAGE ─────────────────────────────────────────────────────────────
 
-interface ReportsPageProps {
-  expenses: Expense[]
-}
-
-export function ReportsPage({ expenses }: ReportsPageProps) {
+export function ReportsPage() {
   const [period, setPeriod] = useState<Period>('month')
 
+  const { from, to, prevFrom, prevTo, label, prevLabel } = getDateRange(period)
+
+  const { data: expenses     = [] } = useExpenses({ from, to })
+  const { data: prevExpenses = [] } = useExpenses({ from: prevFrom, to: prevTo })
+
   const total     = expenses.reduce((s, e) => s + e.amount, 0)
-  const prevTotal = MAY_EXPENSES.reduce((s, e) => s + e.amount, 0)
-  const diffPct   = prevTotal > 0 ? (((total - prevTotal) / prevTotal) * 100).toFixed(1) : '0.0'
+  const prevTotal = prevExpenses.reduce((s, e) => s + e.amount, 0)
+
+  const hasPrev   = prevTotal > 0
+  const diffPct   = hasPrev ? (((total - prevTotal) / prevTotal) * 100).toFixed(1) : null
   const diffPos   = total > prevTotal
 
   const catTotals  = computeCategoryTotals(expenses)
+  const prevCatMap = prevExpenses.reduce<Record<string, number>>((acc, e) => {
+    acc[e.category] = (acc[e.category] ?? 0) + e.amount
+    return acc
+  }, {})
+
   const top5       = [...expenses].sort((a, b) => b.amount - a.amount).slice(0, 5)
-  const avgDaily   = (total / 30).toFixed(2)
+  const days       = daysInRange(from, to)
+  const avgDaily   = total / days
   const daysActive = new Set(expenses.map(e => e.date)).size
 
-  const barData = catTotals.slice(0, 7).map(cat => {
-    const prev = MAY_EXPENSES.find(m => m.category === cat.name)
-    return { name: cat.name, current: cat.value, previous: prev?.amount ?? 0 }
-  })
+  const barData = catTotals.slice(0, 7).map(cat => ({
+    name:     cat.name,
+    current:  cat.value,
+    previous: prevCatMap[cat.name] ?? 0,
+  }))
 
   return (
     <div className="page-content">
@@ -123,29 +116,30 @@ export function ReportsPage({ expenses }: ReportsPageProps) {
           delay={0.05}
           label="Total do período"
           value={formatCurrency(total)}
-          trend={`${diffPos ? '↑ +' : '↓ '}${Math.abs(parseFloat(diffPct))}% vs mês anterior`}
-          trendColor={diffPos ? '#f87171' : '#4ade80'}
-          trendIcon={diffPos ? 'trendUp' : 'trendDown'}
+          trend={diffPct !== null
+            ? `${diffPos ? '↑ +' : '↓ '}${Math.abs(parseFloat(diffPct))}% vs ${prevLabel}`
+            : undefined}
+          trendColor={diffPct !== null ? (diffPos ? '#f87171' : '#4ade80') : undefined}
+          trendIcon={diffPct !== null ? (diffPos ? 'trendUp' : 'trendDown') : undefined}
+          sub={diffPct === null ? `${expenses.length} despesas registradas` : undefined}
         />
         <MiniKPI
           delay={0.1}
           label="Média diária"
-          value={formatCurrency(parseFloat(avgDaily))}
-          trend="↓ -3% vs mês anterior"
-          trendColor="#4ade80"
-          trendIcon="trendDown"
+          value={formatCurrency(avgDaily)}
+          sub={`em ${days} dias`}
         />
         <MiniKPI
           delay={0.15}
           label="Maior gasto único"
           value={formatCurrency(top5[0]?.amount ?? 0)}
-          sub={`${top5[0]?.desc ?? '—'} · ${top5[0] ? formatDate(top5[0].date) : ''}`}
+          sub={top5[0] ? `${top5[0].description} · ${formatDate(top5[0].date)}` : '—'}
         />
         <MiniKPI
           delay={0.2}
           label="Dias com despesas"
-          value={`${daysActive} de 30`}
-          sub="distribuição saudável"
+          value={`${daysActive} de ${days}`}
+          sub="dias com ao menos 1 gasto"
         />
       </div>
 
@@ -154,10 +148,10 @@ export function ReportsPage({ expenses }: ReportsPageProps) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
           <div>
             <div style={{ fontSize: 15, fontWeight: 600, color: '#f7f8fa' }}>Comparativo por categoria</div>
-            <div style={{ fontSize: 13, color: 'rgba(247,248,250,0.4)', marginTop: 2 }}>Junho vs Maio 2026</div>
+            <div style={{ fontSize: 13, color: 'rgba(247,248,250,0.4)', marginTop: 2 }}>{label} vs {prevLabel}</div>
           </div>
           <div style={{ display: 'flex', gap: 16 }}>
-            {([['#C9A84C', 'Junho 2026'], ['rgba(96,165,250,0.6)', 'Maio 2026']] as const).map(([c, l]) => (
+            {([['#C9A84C', label], ['rgba(96,165,250,0.6)', prevLabel]] as const).map(([c, l]) => (
               <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <div style={{ width: 10, height: 10, borderRadius: 2, background: c }} />
                 <span style={{ fontSize: 12, color: 'rgba(247,248,250,0.55)' }}>{l}</span>
@@ -178,7 +172,7 @@ export function ReportsPage({ expenses }: ReportsPageProps) {
             <DonutChart
               data={catTotals.slice(0, 6)}
               size={160}
-              centerLabel={formatCurrency(total).replace('R$ ', 'R$')}
+              centerLabel={formatCurrency(total).replace('R$ ', 'R$')}
               centerSub="total"
             />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -200,13 +194,17 @@ export function ReportsPage({ expenses }: ReportsPageProps) {
         <div className="glass fade-in-up" style={{ animationDelay: '.35s', borderRadius: 16, padding: 24 }}>
           <div style={{ fontSize: 15, fontWeight: 600, color: '#f7f8fa', marginBottom: 20 }}>Top 5 maiores despesas</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            {top5.map((exp, i) => (
+            {top5.length === 0 ? (
+              <div style={{ fontSize: 14, color: 'rgba(247,248,250,0.35)', padding: '20px 0' }}>
+                Nenhuma despesa no período.
+              </div>
+            ) : top5.map((exp, i) => (
               <div
                 key={exp.id}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 12,
                   padding: '11px 0',
-                  borderBottom: i < 4 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                  borderBottom: i < top5.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
                 }}
               >
                 <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 20, fontWeight: 800, color: 'rgba(201,168,76,0.35)', width: 28, flexShrink: 0 }}>
@@ -215,7 +213,7 @@ export function ReportsPage({ expenses }: ReportsPageProps) {
                 <CategoryIcon name={exp.category} size={32} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: '#f7f8fa', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {exp.desc}
+                    {exp.description}
                   </div>
                   <CategoryBadge name={exp.category} />
                 </div>
@@ -237,28 +235,38 @@ export function ReportsPage({ expenses }: ReportsPageProps) {
           <div>
             <div style={{ fontSize: 15, fontWeight: 600, color: '#f7f8fa', marginBottom: 12 }}>📊 Análise do período</div>
             <p style={{ fontSize: 14, color: 'rgba(247,248,250,0.7)', lineHeight: 1.8 }}>
-              Você gastou{' '}
-              <strong style={{ color: '#f7f8fa' }}>{formatCurrency(total)}</strong> em junho,{' '}
-              <strong style={{ color: diffPos ? '#f87171' : '#4ade80' }}>
-                {diffPos ? `+${Math.abs(parseFloat(diffPct))}% a mais` : `${Math.abs(parseFloat(diffPct))}% a menos`}
-              </strong>{' '}
-              que em maio ({formatCurrency(prevTotal)}).{' '}
-              {catTotals[0] && (
+              {expenses.length === 0 ? (
+                'Nenhuma despesa registrada no período. Adicione despesas para ver a análise.'
+              ) : (
                 <>
-                  Sua categoria dominante foi{' '}
-                  <strong style={{ color: '#f7f8fa' }}>{catTotals[0].name}</strong>{' '}
-                  ({((catTotals[0].value / total) * 100).toFixed(1)}%),{' '}
+                  Você gastou{' '}
+                  <strong style={{ color: '#f7f8fa' }}>{formatCurrency(total)}</strong> em {label},{' '}
+                  {diffPct !== null && (
+                    <>
+                      <strong style={{ color: diffPos ? '#f87171' : '#4ade80' }}>
+                        {diffPos ? `+${Math.abs(parseFloat(diffPct))}% a mais` : `${Math.abs(parseFloat(diffPct))}% a menos`}
+                      </strong>{' '}
+                      que em {prevLabel} ({formatCurrency(prevTotal)}).{' '}
+                    </>
+                  )}
+                  {catTotals[0] && (
+                    <>
+                      Sua categoria dominante foi{' '}
+                      <strong style={{ color: '#f7f8fa' }}>{catTotals[0].name}</strong>{' '}
+                      ({((catTotals[0].value / total) * 100).toFixed(1)}%),{' '}
+                    </>
+                  )}
+                  {catTotals[1] && (
+                    <>
+                      seguida de{' '}
+                      <strong style={{ color: '#f7f8fa' }}>{catTotals[1].name}</strong>{' '}
+                      ({((catTotals[1].value / total) * 100).toFixed(1)}%).{' '}
+                    </>
+                  )}
+                  Sua média diária foi de{' '}
+                  <strong style={{ color: '#f7f8fa' }}>{formatCurrency(avgDaily)}</strong>.
                 </>
               )}
-              {catTotals[1] && (
-                <>
-                  seguida de{' '}
-                  <strong style={{ color: '#f7f8fa' }}>{catTotals[1].name}</strong>{' '}
-                  ({((catTotals[1].value / total) * 100).toFixed(1)}%).{' '}
-                </>
-              )}
-              Sua média diária foi de{' '}
-              <strong style={{ color: '#f7f8fa' }}>{formatCurrency(parseFloat(avgDaily))}</strong>.
             </p>
           </div>
         </div>

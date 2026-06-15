@@ -5,7 +5,6 @@ import { Icon } from '../../components/ui/Icon'
 import { DashboardHome } from './DashboardHome'
 import { ExpensesPage } from './ExpensesPage'
 import { ReportsPage } from './ReportsPage'
-import { MOCK_EXPENSES, type Expense } from '../../utils/expenses'
 import type { IconName } from '../../types'
 
 type DashView = 'home' | 'expenses' | 'reports'
@@ -25,9 +24,8 @@ const NAV_ITEMS: NavItem[] = [
 const TOAST_DURATION = 2800
 
 export default function DashboardPage() {
-  const [view,     setView]     = useState<DashView>('home')
-  const [expenses, setExpenses] = useState<Expense[]>(MOCK_EXPENSES)
-  const [toast,    setToast]    = useState<string | null>(null)
+  const [view,  setView]  = useState<DashView>('home')
+  const [toast, setToast] = useState<string | null>(null)
   const { user, logout } = useAuth()
 
   const showToast = (msg: string) => {
@@ -145,19 +143,12 @@ export default function DashboardPage() {
         {/* Content */}
         <main style={{ flex: 1, overflowY: 'auto' }}>
           {view === 'home' && (
-            <DashboardHome
-              expenses={expenses}
-              onNavigate={v => setView(v as DashView)}
-            />
+            <DashboardHome onNavigate={v => setView(v as DashView)} />
           )}
           {view === 'expenses' && (
-            <ExpensesPage
-              expenses={expenses}
-              setExpenses={setExpenses}
-              showToast={showToast}
-            />
+            <ExpensesPage showToast={showToast} />
           )}
-          {view === 'reports' && <ReportsPage expenses={expenses} />}
+          {view === 'reports' && <ReportsPage />}
         </main>
 
         {/* Toast */}

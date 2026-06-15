@@ -3,6 +3,8 @@ import { DonutChart } from '../../components/ui/DonutChart'
 import { CategoryIcon } from '../../components/ui/CategoryIcon'
 import { CategoryBadge } from '../../components/ui/CategoryBadge'
 import { formatCurrency, formatDate, computeCategoryTotals, type Expense } from '../../utils/expenses'
+import { getDateRange } from '../../utils/dateRange'
+import { useExpenses } from '../../hooks/useExpenses'
 import type { IconName } from '../../types'
 
 interface KPICardProps {
@@ -46,7 +48,7 @@ function RecentExpenseRow({ expense }: { expense: Expense }) {
       <CategoryIcon name={expense.category} size={36} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 14, fontWeight: 600, color: '#f7f8fa', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {expense.desc}
+          {expense.description}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
           <CategoryBadge name={expense.category} />
@@ -61,15 +63,25 @@ function RecentExpenseRow({ expense }: { expense: Expense }) {
 }
 
 interface DashboardHomeProps {
-  expenses: Expense[]
   onNavigate: (view: string) => void
 }
 
-export function DashboardHome({ expenses, onNavigate }: DashboardHomeProps) {
+export function DashboardHome({ onNavigate }: DashboardHomeProps) {
+  const { from, to, label } = getDateRange('month')
+  const { data: expenses = [], isLoading } = useExpenses({ from, to })
+
   const total = expenses.reduce((s, e) => s + e.amount, 0)
   const catTotals = computeCategoryTotals(expenses)
   const topCat = catTotals[0] ?? { name: '—', value: 0 }
   const recent = [...expenses].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5)
+
+  if (isLoading) {
+    return (
+      <div className="page-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
+        <span style={{ color: 'rgba(247,248,250,0.4)', fontSize: 14 }}>Carregando…</span>
+      </div>
+    )
+  }
 
   return (
     <div className="page-content">
@@ -80,15 +92,15 @@ export function DashboardHome({ expenses, onNavigate }: DashboardHomeProps) {
           Bom dia, Nicolas. 👋
         </h1>
         <p style={{ fontSize: 14, color: 'rgba(247,248,250,0.45)' }}>
-          Aqui está seu resumo financeiro de junho.
+          Aqui está seu resumo financeiro de {label.toLowerCase()}.
         </p>
       </div>
 
       {/* KPI row */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
-        <KPICard delay={0.05} icon="wallet"   label="Total do período" value={formatCurrency(total)} sub="junho 2026" />
+        <KPICard delay={0.05} icon="wallet"   label="Total do período" value={formatCurrency(total)} sub={label} />
         <KPICard delay={0.1}  icon="award"    label="Maior categoria"  value={topCat.name} sub={formatCurrency(topCat.value)} subColor="#f87171" />
-        <KPICard delay={0.15} icon="fileText" label="Despesas"         value={`${expenses.length} registros`} sub="em junho de 2026" />
+        <KPICard delay={0.15} icon="fileText" label="Despesas"         value={`${expenses.length} registros`} sub={`em ${label.toLowerCase()}`} />
       </div>
 
       {/* Chart + Recent */}
@@ -98,14 +110,14 @@ export function DashboardHome({ expenses, onNavigate }: DashboardHomeProps) {
         <div className="glass fade-in-up" style={{ animationDelay: '.2s', borderRadius: 16, padding: 24 }}>
           <div style={{ marginBottom: 20 }}>
             <div style={{ fontSize: 15, fontWeight: 600, color: '#f7f8fa' }}>Gastos por categoria</div>
-            <div style={{ fontSize: 13, color: 'rgba(247,248,250,0.4)', marginTop: 2 }}>Junho 2026</div>
+            <div style={{ fontSize: 13, color: 'rgba(247,248,250,0.4)', marginTop: 2 }}>{label}</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
             <div style={{ flexShrink: 0 }}>
               <DonutChart
                 data={catTotals.slice(0, 6)}
                 size={180}
-                centerLabel={formatCurrency(total).replace('R$ ', 'R$')}
+                centerLabel={formatCurrency(total).replace('R$ ', 'R$')}
                 centerSub="total"
               />
             </div>
